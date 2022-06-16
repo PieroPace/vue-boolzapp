@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css"
+        integrity="sha512-Fo3rlrZj/k7ujTnHg4CGR2D7kSs0v4LLanw2qksYuRlEzO+tcaEPQogQ0KaoGN26/zrn20ImR1DfuLWnOo7aBA=="
+        crossorigin="anonymous" referrerpolicy="no-referrer" />
+    <script src="https://unpkg.com/dayjs@1.8.21/dayjs.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/vue@2/dist/vue.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@100;400&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/main.css">
+    <title>Vue Boolzapp</title>
+</head>
+<body>
+    <div id="app" class="body-container">
+        <div class="main-container d-flex" :class="selected" v-if="loaded">
+            <div class="left-row" :class="(darkmode) ? 'dark' : ''">
+                <header class="left-header d-flex nav">
+                    <div class="user-container d-flex">
+                        <img src="img/avatar_io.jpg" alt="profile-pic" class="circle_pic">
+                        <h1 class="userName">Piero</h1>
+                    </div>
+                    <div class="ico-container d-flex">
+                        <i class="fas fa-circle-notch"></i>
+                        <i class="fas fa-comment-alt"></i>
+                        <i @click="menuClick = !menuClick" class="fas fa-ellipsis-v"></i>
+                        <div v-show="menuClick" class="message-menu-list">
+                            <ul>
+                                <li>
+                                    <label for="charSize">
+                                        Dimensione carattere
+                                    </label>
+                                    <select v-model="selected" name="charSize" id="charSize">
+                                        <option value="f-small">
+                                            Piccolo
+                                        </option>
+                                        <option value="f-medium">
+                                            Medio
+                                        </option>
+                                        <option value="f-large">
+                                            Grande
+                                        </option>
+                                    </select>
+                                </li>
+                                <li>
+                                    <button @click="darkmode = !darkmode">Dark/Light</button>
+                                </li>
+                            </ul>
+                        </div>
+                    </div>
+                </header>
+                <div class="notify_popup d-flex">
+                    <div class="circle_pic d-flex">
+                        <i class="fas fa-bell-slash"></i>
+                    </div>
+                    <div class="text-container">
+                        <h2>Ricevi notifiche di nuovi messaggi</h2>
+                        <a href="#">Attiva notifiche desktop</a>
+                    </div>
+                </div>
+                <div class="search-nav d-flex">
+                    <i class="fas fa-search"></i>
+                    <input type="text" placeholder="Cerca o inizia una nuova chat" v-model.trim="search">
+                </div>
+                <div class="chat-container">
+                    <ul v-if="search == ''">
+                        <li v-for="(contact, index) in contacts" v-show="contact.visible" class="div_chat d-flex" :class="(active == index) ? 'active' : ''" @click="active = index">
+                            <div class="chat_name_container d-flex">
+                                <img :src="`img/avatar${contact.avatar}.jpg`" :alt="contact.name" class="circle_pic">
+                                <div class="text">
+                                    <h2 class="chat_name">{{ contact.name }}</h2>
+                                    <p class="chat_last_message">
+                                        {{ getLastMessageorDate(index, 'text') }}
+                                    </p>
+                                </div>
+                            </div>
+                            <div class="chat_data_container">
+                                <p class="chat_data">{{ getLastMessageorDate(index, 'data') }}</p>
+                            </div>
+                        </li>
+                    </ul>
+                    <ul v-else>
+                        <li v-for="(contact, index) in contacts" v-show="showContact(contact)" class="div_chat d-flex" :class="(active == index) ? 'active' : ''" @click="activeNewChat(index)">
+                            <div class="chat_name_container d-flex">
+                                <img :src="`img/avatar${contact.avatar}.jpg`" :alt="contact.name" class="circle_pic">
+                                <div class="text">
+                                    <h2 class="chat_name">{{ contact.name }}</h2>
+                                    <p class="chat_last_message">
+                                        {{ getLastMessageorDate(index, 'text') }}
+                                    </p>
+                                </div>
+                            </div>
+                            <div class="chat_data_container">
+                                <p class="chat_data">{{ getLastMessageorDate(index, 'data') }}</p>
+                            </div>
+                        </li>
+                    </ul>
+
+                </div>
+            </div>
+            <div v-if="active != null" class="right-row" :class="(darkmode) ? 'dark' : ''">
+                <header class="right-header d-flex nav">
+                    <div class="user-container d-flex">
+                        <img :src="`img/avatar${contacts[active].avatar}.jpg`" :alt="contacts[active].name" class="circle_pic">
+                        <div class="text">
+                            <h1 class="userName">{{ contacts[active].name }}</h1>
+                            <p class="last-access">{{ contacts[active].lastAccess }}</p>
+                        </div>
+                    </div>
+                    <div class="ico-container d-flex">
+                        <i class="fas fa-search"></i>
+                        <i class="fas fa-paperclip"></i>
+                        <i @click="chatMenuClick = !chatMenuClick" class="fas fa-ellipsis-v"></i>
+                        <div v-show="chatMenuClick" class="message-menu-list">
+                            <ul>
+                                <li @click="deleteChat">
+                                    Elimina Chat
+                                </li>
+                                <li @click="deleteMessages(active)">
+                                    Elimina Messaggi della chat
+                                </li>
+                            </ul>
+                        </div>
+                    </div>
+                </header>
+                <main class="main-container-chat">
+                    <ul class="d-flex">
+                        <li v-for="(message,index) in contacts[active].messages" class="message" :class="message.status">
+                            <div class="message-text">
+                                {{ message.text }}
+                            </div>
+                            <p class="message-data">
+                                {{ message.date }}
+                            </p>
+                            <i @click="showChatMenu(index)" class="fas fa-angle-down message-menu"></i>
+                            <div v-if="messageActive.menuShow && index == messageActive.messageIndex" class="message-menu-list">
+                                <ul>
+                                    <li>
+                                        Message Info
+                                    </li>
+                                    <li @click="deleteMessage(index)">
+                                        Delete Message
+                                    </li>
+                                </ul>
+                            </div>
+                        </li>
+                    </ul>
+                </main>
+                <footer class="footer-chat d-flex nav">
+                    <i class="far fa-smile"></i>
+                    <input type="text" placeholder="Scrivi un messaggio" v-model="newMessage" @keyup.enter="sendNewMessage(newMessage,active)">
+                    <i v-if="newMessage.trim() == ''" class="fas fa-microphone"></i>
+                    <i v-else @click="sendNewMessage(newMessage,active)" class="fas fa-paper-plane"></i>
+                </footer>
+            </div>
+            <div v-else class="right-row splash d-flex" :class="(darkmode) ? 'dark' : ''">
+                <div class="splash-container">
+                        <h1>Benvenuto in Boolzapp</h1>
+                        <p>Seleziona un contatto per continuare una chat o utilizza la barra di ricerca per iniziarne una nuova</p>
+                </div>
+            </div>
+        </div>
+        <div v-else class="loading-page-container d-flex">
+            <div class="loading-text">
+                <h1>Benvenuto in BOOLZAP</h1>
+
+            </div>
+        </div>
+    </div>
+
+    <script src="js/script.js"></script>
+</body>
+</html>
